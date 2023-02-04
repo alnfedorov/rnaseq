@@ -3,6 +3,120 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [[3.10.1](https://github.com/nf-core/rnaseq/releases/tag/3.10.1)] - 2023-01-05
+
+### Enhancements & fixes
+
+- [[#919](https://github.com/nf-core/rnaseq/issues/919)] - Salmon quant not run after FastQ subsampling if index not provided
+- [[#922](https://github.com/nf-core/rnaseq/issues/922)] - Passing TrimGalore `--hardtrim3` / `--hardtrim5` via custom config raises missing output filename error
+
+## [[3.10](https://github.com/nf-core/rnaseq/releases/tag/3.10)] - 2022-12-21
+
+### Enhancements & fixes
+
+- Bump minimum Nextflow version from `21.10.3` -> `22.10.1`
+- Updated pipeline template to [nf-core/tools 2.7.2](https://github.com/nf-core/tools/releases/tag/2.7.2)
+- [[#729](https://github.com/nf-core/rnaseq/issues/729)] - Add 'auto' option to samplesheet to automatically detect strandedness for samples
+- [[#889](https://github.com/nf-core/rnaseq/issues/889)] - Document valid options for `--genome` parameter
+- [[#891](https://github.com/nf-core/rnaseq/issues/891)] - Skip MarkDuplicates when UMIs are used
+- [[#896](https://github.com/nf-core/rnaseq/issues/896)] - Remove `copyTo` call for iGenomes README
+- [[#897](https://github.com/nf-core/rnaseq/issues/897)] - Use `--skip_preseq` by default
+- [[#898](https://github.com/nf-core/rnaseq/issues/898)] - Documentation on salmon decoy-aware index creation, gcbias and seqbias
+- [[#900](https://github.com/nf-core/rnaseq/issues/900)] - Add `--recursive` option to `fastq_dir_to_samplesheet.py` script
+- [[#902](https://github.com/nf-core/rnaseq/issues/902)] - `check_samplesheet.py` script doesn't output optional columns in samplesheet
+- [[#907](https://github.com/nf-core/rnaseq/issues/907)] - Add `--extra_star_align_args` and `--extra_salmon_quant_args` parameter
+- [[#912](https://github.com/nf-core/rnaseq/issues/912)] - Add UMI deduplication before quantification in tube map
+
+### Parameters
+
+| Old parameter    | New parameter               |
+| ---------------- | --------------------------- |
+| `--enable_conda` |                             |
+|                  | `--extra_star_align_args`   |
+|                  | `--extra_salmon_quant_args` |
+
+> **NB:** Parameter has been **updated** if both old and new parameter information is present.
+> **NB:** Parameter has been **added** if just the new parameter information is present.
+> **NB:** Parameter has been **removed** if new parameter information isn't present.
+
+### Software dependencies
+
+Note, since the pipeline is now using Nextflow DSL2, each process will be run with its own [Biocontainer](https://biocontainers.pro/#/registry). This means that on occasion it is entirely possible for the pipeline to be using different versions of the same tool. However, the overall software dependency changes compared to the last release have been listed below for reference.
+
+| Dependency                          | Old version | New version |
+| ----------------------------------- | ----------- | ----------- |
+| `bbmap`                             | 38.93       | 39.01       |
+| `bioconductor-dupradar`             | 1.18.0      | 1.28.0      |
+| `bioconductor-summarizedexperiment` | 1.20.0      | 1.24.0      |
+| `bioconductor-tximeta`              | 1.8.0       | 1.12.0      |
+| `fq`                                |             | 0.9.1       |
+| `salmon`                            | 1.5.2       | 1.9.0       |
+| `samtools`                          | 1.15.1      | 1.16.1      |
+
+> **NB:** Dependency has been **updated** if both old and new version information is present.
+> **NB:** Dependency has been **added** if just the new version information is present.
+> **NB:** Dependency has been **removed** if version information isn't present.
+
+## [[3.9](https://github.com/nf-core/rnaseq/releases/tag/3.9)] - 2022-09-30
+
+### Enhancements & fixes
+
+- [[#746](https://github.com/nf-core/rnaseq/issues/746)] - Add `tin.py` output to MultiQC report
+- [[#841](https://github.com/nf-core/rnaseq/issues/841)] - Turn `--deseq2_vst` on by default
+- [[#853](https://github.com/nf-core/rnaseq/issues/853)] - Pipeline fails at email step: Failed to invoke `workflow.onComplete` event handler
+- [[#857](https://github.com/nf-core/rnaseq/issues/857)] - Missing parameter required by StringTie if using STAR as aligner
+- [[#862](https://github.com/nf-core/rnaseq/issues/862)] - Filter samples that have no reads after trimming
+- [[#864](https://github.com/nf-core/rnaseq/issues/864)] - Pre-process transcripts fasta when using `--gencode`
+- Expose additional arguments to UMI-tools as pipeline params: `--umitools_bc_pattern2` is required if the UMI is located on read 2. `--umitools_umi_separator` will often be needed in conjunction with `--skip_umi_extract` as most other tools such as Illumina's `BCL Convert` use a colon instead of an underscore to separate the UMIs. The `--umitools_grouping_method` allows to fine-tune handling of similar but non-identical UMIs.
+- Updated pipeline template to [nf-core/tools 2.5.1](https://github.com/nf-core/tools/releases/tag/2.5.1)
+
+### Parameters
+
+| Old parameter | New parameter                |
+| ------------- | ---------------------------- |
+|               | `--umitools_bc_pattern2`     |
+|               | `--umitools_umi_separator`   |
+|               | `--umitools_grouping_method` |
+
+### Software dependencies
+
+Note, since the pipeline is now using Nextflow DSL2, each process will be run with its own [Biocontainer](https://biocontainers.pro/#/registry). This means that on occasion it is entirely possible for the pipeline to be using different versions of the same tool. However, the overall software dependency changes compared to the last release have been listed below for reference.
+
+| Dependency | Old version | New version |
+| ---------- | ----------- | ----------- |
+| `hisat2`   | 2.2.0       | 2.2.1       |
+| `multiqc`  | 1.11        | 1.13        |
+| `picard`   | 2.26.10     | 2.27.4      |
+
+> **NB:** Dependency has been **updated** if both old and new version information is present.
+> **NB:** Dependency has been **added** if just the new version information is present.
+> **NB:** Dependency has been **removed** if version information isn't present.
+
+## [[3.8.1](https://github.com/nf-core/rnaseq/releases/tag/3.8.1)] - 2022-05-27
+
+- [[#834](https://github.com/nf-core/rnaseq/issues/834)] - `nf-core download` fails with version 3.8 of the pipeline
+
+## [[3.8](https://github.com/nf-core/rnaseq/releases/tag/3.8)] - 2022-05-25
+
+### :warning: Major enhancements
+
+Fixed quite a well hidden bug in the UMI processing mode of the pipeline when using `--with_umi --aligner star_salmon` as reported by [Lars Roed Ingerslev](https://github.com/lars-work-sund). Paired-end BAM files were not appropriately name sorted after `umi_tools dedup` which ultimately resulted in incorrect reading and quantification with Salmon. If you have used previous versions of the pipeline to analyse paired-end UMI data it will need to be reprocessed using this version of the pipeline. See [#828](https://github.com/nf-core/rnaseq/issues/828) for more context.
+
+### Enhancements & fixes
+
+- [[#824](https://github.com/nf-core/rnaseq/issues/824)] - Add explicit docs for usage of featureCounts in the pipeline
+- [[#825](https://github.com/nf-core/rnaseq/issues/825)] - Pipeline fails due to trimming related removal of all reads from a sample
+- [[#827](https://github.com/nf-core/rnaseq/issues/827)] - Control generation of --output-stats when running umi-tools dedup
+- [[#828](https://github.com/nf-core/rnaseq/issues/828)] - Filter BAM output of UMI-tools dedup before passing to Salmon quant
+- Updated pipeline template to [nf-core/tools 2.4.1](https://github.com/nf-core/tools/releases/tag/2.4.1)
+
+### Parameters
+
+| Old parameter | New parameter            |
+| ------------- | ------------------------ |
+|               | `--min_trimmed_reads`    |
+|               | `--umitools_dedup_stats` |
+
 ## [[3.7](https://github.com/nf-core/rnaseq/releases/tag/3.7)] - 2022-05-03
 
 ### :warning: Major enhancements

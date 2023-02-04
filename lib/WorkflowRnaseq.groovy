@@ -2,6 +2,9 @@
 // This file holds several functions specific to the workflow/rnaseq.nf in the nf-core/rnaseq pipeline
 //
 
+import groovy.json.JsonSlurper
+import groovy.text.SimpleTemplateEngine
+
 class WorkflowRnaseq {
 
     //
@@ -9,6 +12,7 @@ class WorkflowRnaseq {
     //
     public static void initialise(params, log, valid_params) {
         genomeExistsError(params, log)
+
 
         if (!params.fasta) {
             log.error "Genome fasta file not specified with e.g. '--fasta genome.fa' or via a detectable config file."
@@ -45,6 +49,15 @@ class WorkflowRnaseq {
             log.error "Please provide --ribo_database_manifest to remove ribosomal RNA with SortMeRNA."
             System.exit(1)
         }
+
+
+        if (params.with_umi && !params.skip_umi_extract) {
+            if (!params.umitools_bc_pattern && !params.umitools_bc_pattern2) {
+                log.error "UMI-tools requires a barcode pattern to extract barcodes from the reads."
+                System.exit(1)
+            }
+        }
+
 
         if (!params.skip_alignment) {
             if (!valid_params['aligners'].contains(params.aligner)) {
@@ -149,6 +162,39 @@ class WorkflowRnaseq {
     }
 
     //
+    // Function that parses Salmon quant 'meta_info.json' output file to get inferred strandedness
+    //
+    public static String getSalmonInferredStrandedness(json_file) {
+        def lib_type = new JsonSlurper().parseText(json_file.text).get('library_types')[0]
+        def strandedness = 'reverse'
+        if (lib_type) {
+            if (lib_type in ['U', 'IU']) {
+                strandedness = 'unstranded'
+            } else if (lib_type in ['SF', 'ISF']) {
+                strandedness = 'forward'
+            } else if (lib_type in ['SR', 'ISR']) {
+                strandedness = 'reverse'
+            }
+        }
+        return strandedness
+    }
+
+    //
+    // Function that parses TrimGalore log output file to get total number of reads after trimming
+    //
+    public static Integer getTrimGaloreReadsAfterFiltering(log_file) {
+        def total_reads = 0
+        def filtered_reads = 0
+        log_file.eachLine { line ->
+            def total_reads_matcher = line =~ /([\d\.]+)\ssequences processed in total/
+            def filtered_reads_matcher = line =~ /shorter than the length cutoff[^:]+:\s([\d\.]+)/
+            if (total_reads_matcher) total_reads = total_reads_matcher[0][1].toFloat()
+            if (filtered_reads_matcher) filtered_reads = filtered_reads_matcher[0][1].toFloat()
+        }
+        return total_reads - filtered_reads
+    }
+
+    //
     // Function that parses and returns the alignment rate from the STAR log output
     //
     public static ArrayList getStarPercentMapped(params, align_log) {
@@ -223,7 +269,22 @@ class WorkflowRnaseq {
         return yaml_file_text
     }
 
-    //
+    public static String methodsDescriptionText(run_workflow, mqc_methods_yaml) {
+        // Convert  to a named map so can be used as with familar NXF ${workflow} variable syntax in the MultiQC YML file
+        def meta = [:]
+        meta.workflow = run_workflow.toMap()
+        meta["manifest_map"] = run_workflow.manifest.toMap()
+
+        meta["doi_text"] = meta.manifest_map.doi ? "(doi: <a href=\'https://doi.org/${meta.manifest_map.doi}\'>${meta.manifest_map.doi}</a>)" : ""
+        meta["nodoi_text"] = meta.manifest_map.doi ? "": "<li>If available, make sure to update the text to include the Zenodo DOI of version of the pipeline used. </li>"
+
+        def methods_text = mqc_methods_yaml.text
+
+        def engine =  new SimpleTemplateEngine()
+        def description_html = engine.createTemplate(methods_text).make(meta)
+
+        return description_html
+    }//
     // Exit pipeline if incorrect --genome key provided
     //
     private static void genomeExistsError(params, log) {
