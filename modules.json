@@ -75,6 +75,11 @@
                         "git_sha": "bdc2a97ced7adc423acfa390742db83cab98c1ad",
                         "installed_by": ["modules"]
                     },
+                    "minimap2/index": {
+                        "branch": "master",
+                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "installed_by": ["modules"]
+                    },
                     "picard/markduplicates": {
                         "branch": "master",
                         "git_sha": "2ee934606f1fdf7fc1cb05d6e8abc13bec8ab448",

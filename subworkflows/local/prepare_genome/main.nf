@@ -19,6 +19,7 @@ include { UNTAR as UNTAR_KALLISTO_INDEX     } from '../../../modules/nf-core/unt
 include { CUSTOM_GETCHROMSIZES              } from '../../../modules/nf-core/custom/getchromsizes'
 include { GFFREAD                           } from '../../../modules/nf-core/gffread'
 include { BBMAP_BBSPLIT                     } from '../../../modules/nf-core/bbmap/bbsplit'
+include { MINIMAP2_INDEX                    } from '../../../modules/nf-core/minimap2/index'
 include { STAR_GENOMEGENERATE               } from '../../../modules/nf-core/star/genomegenerate'
 include { HISAT2_EXTRACTSPLICESITES         } from '../../../modules/nf-core/hisat2/extractsplicesites'
 include { HISAT2_BUILD                      } from '../../../modules/nf-core/hisat2/build'
@@ -43,12 +44,14 @@ workflow PREPARE_GENOME {
     gene_bed             //      file: /path/to/gene.bed
     splicesites          //      file: /path/to/splicesites.txt
     bbsplit_fasta_list   //      file: /path/to/bbsplit_fasta_list.txt
+    minimap2_fasta       //      file: /path/to/minimap2_fasta.txt
     star_index           // directory: /path/to/star/index/
     rsem_index           // directory: /path/to/rsem/index/
     salmon_index         // directory: /path/to/salmon/index/
     kallisto_index       // directory: /path/to/kallisto/index/
     hisat2_index         // directory: /path/to/hisat2/index/
     bbsplit_index        // directory: /path/to/rsem/index/
+    minimap2_index       //      file: /path/to/minimap2/index/
     gencode              //   boolean: whether the genome is from GENCODE
     is_aws_igenome       //   boolean: whether the genome files are from AWS iGenomes
     biotype              //    string: if additional fasta file is provided biotype value to use when appending entries to GTF file
@@ -185,6 +188,19 @@ workflow PREPARE_GENOME {
     }
 
     //
+    // Generate minimap2 index from scratch
+    //
+    ch_minimap2_index = Channel.empty()
+    if ("minimap2" in prepare_tool_indices) {
+        if (minimap2_index) {
+            ch_minimap2_index = Channel.value(file(minimap2_index, checkIfExists: true))
+        } else {
+            ch_minimap2_index = MINIMAP2_INDEX(["pre-mapping-index", file(minimap2_fasta, checkIfExists: true)]).index
+            ch_versions       = ch_versions.mix(MINIMAP2_INDEX.out.versions)
+        }
+    }
+
+    //
     // Uncompress STAR index or generate from scratch if required
     //
     ch_star_index = Channel.empty()
@@ -295,6 +311,7 @@ workflow PREPARE_GENOME {
     chrom_sizes      = ch_chrom_sizes            // channel: path(genome.sizes)
     splicesites      = ch_splicesites            // channel: path(genome.splicesites.txt)
     bbsplit_index    = ch_bbsplit_index          // channel: path(bbsplit/index/)
+    minimap2_index   = ch_minimap2_index         // channel: path(minimap2/index/)
     star_index       = ch_star_index             // channel: path(star/index/)
     rsem_index       = ch_rsem_index             // channel: path(rsem/index/)
     hisat2_index     = ch_hisat2_index           // channel: path(hisat2/index/)

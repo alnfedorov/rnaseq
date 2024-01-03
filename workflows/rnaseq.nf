@@ -33,9 +33,16 @@ if (!params.skip_bbsplit && !params.bbsplit_index && params.bbsplit_fasta_list) 
     if (ch_bbsplit_fasta_list.isEmpty()) {exit 1, "File provided with --bbsplit_fasta_list is empty: ${ch_bbsplit_fasta_list.getName()}!"}
 }
 
+// Check if file with target pre-mapping FASTA exists
+if (params.premap_fasta) {
+    ch_premap_fasta = file(params.premap_fasta)
+    if (ch_premap_fasta.isEmpty()) {exit 1, "File provided with --premap_fasta is empty: ${ch_premap_fasta.getName()}!"}
+}
+
 // Check alignment parameters
 def prepareToolIndices  = []
 if (!params.skip_bbsplit) { prepareToolIndices << 'bbsplit' }
+if (params.premap_fasta) { prepareToolIndices << 'minimap2' }
 if (!params.skip_alignment) { prepareToolIndices << params.aligner }
 if (!params.skip_pseudo_alignment && params.pseudo_aligner) { prepareToolIndices << params.pseudo_aligner }
 
@@ -108,6 +115,7 @@ include { BEDTOOLS_GENOMECOV                 } from '../modules/local/bedtools_g
 include { DESEQ2_QC as DESEQ2_QC_STAR_SALMON } from '../modules/local/deseq2_qc'
 include { DESEQ2_QC as DESEQ2_QC_RSEM        } from '../modules/local/deseq2_qc'
 include { DESEQ2_QC as DESEQ2_QC_PSEUDO      } from '../modules/local/deseq2_qc'
+include { MINIMAP2_PREMAP                    } from '../modules/local/minimap2_premap'
 include { DUPRADAR                           } from '../modules/local/dupradar'
 include { MULTIQC                            } from '../modules/local/multiqc'
 include { MULTIQC_CUSTOM_BIOTYPE             } from '../modules/local/multiqc_custom_biotype'
@@ -185,12 +193,14 @@ workflow RNASEQ {
         params.gene_bed,
         params.splicesites,
         params.bbsplit_fasta_list,
+        params.premap_fasta,
         params.star_index,
         params.rsem_index,
         params.salmon_index,
         params.kallisto_index,
         params.hisat2_index,
         params.bbsplit_index,
+        params.premap_index,
         params.gencode,
         is_aws_igenome,
         biotype,
@@ -387,6 +397,21 @@ workflow RNASEQ {
 
         ch_sortmerna_multiqc = SORTMERNA.out.log
         ch_versions = ch_versions.mix(SORTMERNA.out.versions.first())
+    }
+
+    // 
+    // MODULE: Premap reads to supplied libraries
+    //
+    ch_premap_multiqc = Channel.empty()
+    if (params.premap_fasta) {
+        MINIMAP2_PREMAP(
+            ch_filtered_reads, 
+            PREPARE_GENOME.out.minimap2_index
+        )
+        .unmapped_reads
+        .set { ch_filtered_reads }
+
+        ch_versions = ch_versions.mix(MINIMAP2_PREMAP.out.versions.first())
     }
 
     //
