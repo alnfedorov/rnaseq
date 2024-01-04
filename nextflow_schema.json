@@ -534,6 +534,13 @@
                     "default": "bam_stat,inner_distance,infer_experiment,junction_annotation,junction_saturation,read_distribution,read_duplication",
                     "fa_icon": "fas fa-chart-pie",
                     "description": "Specify the RSeQC modules to run."
+                },
+                "bigwig_tool" : {
+                    "type": "string",
+                    "default": "bedtools",
+                    "fa_icon": "fas fa-chart-area",
+                    "description": "Specify the tool to use for bigWig file creation.",
+                    "enum": ["deeptools", "bedtools"]
                 }
             }
         },

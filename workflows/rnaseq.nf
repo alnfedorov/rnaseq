@@ -163,6 +163,7 @@ include { BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS as BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS
 include { BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS as BAM_DEDUP_STATS_SAMTOOLS_UMITOOLS_TRANSCRIPTOME } from '../subworkflows/nf-core/bam_dedup_stats_samtools_umitools'
 include { BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG as BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG_FORWARD } from '../subworkflows/nf-core/bedgraph_bedclip_bedgraphtobigwig'
 include { BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG as BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG_REVERSE } from '../subworkflows/nf-core/bedgraph_bedclip_bedgraphtobigwig'
+include { DEEPTOOLS_BAMCOVERAGE                                                          } from '../modules/local/deeptools_bamcoverage/main'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -739,25 +740,31 @@ workflow RNASEQ {
     // MODULE: Genome-wide coverage with BEDTools
     //
     if (!params.skip_alignment && !params.skip_bigwig) {
+        if (params.bigwig_tool == "bedtools") {
+            BEDTOOLS_GENOMECOV (
+                ch_genome_bam
+            )
+            ch_versions = ch_versions.mix(BEDTOOLS_GENOMECOV.out.versions.first())
 
-        BEDTOOLS_GENOMECOV (
-            ch_genome_bam
-        )
-        ch_versions = ch_versions.mix(BEDTOOLS_GENOMECOV.out.versions.first())
+            //
+            // SUBWORKFLOW: Convert bedGraph to bigWig
+            //
+            BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG_FORWARD (
+                BEDTOOLS_GENOMECOV.out.bedgraph_forward,
+                PREPARE_GENOME.out.chrom_sizes
+            )
+            ch_versions = ch_versions.mix(BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG_FORWARD.out.versions)
 
-        //
-        // SUBWORKFLOW: Convert bedGraph to bigWig
-        //
-        BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG_FORWARD (
-            BEDTOOLS_GENOMECOV.out.bedgraph_forward,
-            PREPARE_GENOME.out.chrom_sizes
-        )
-        ch_versions = ch_versions.mix(BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG_FORWARD.out.versions)
-
-        BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG_REVERSE (
-            BEDTOOLS_GENOMECOV.out.bedgraph_reverse,
-            PREPARE_GENOME.out.chrom_sizes
-        )
+            BEDGRAPH_BEDCLIP_BEDGRAPHTOBIGWIG_REVERSE (
+                BEDTOOLS_GENOMECOV.out.bedgraph_reverse,
+                PREPARE_GENOME.out.chrom_sizes
+            )
+        } else if (params.bigwig_tool == "deeptools") {
+            DEEPTOOLS_BAMCOVERAGE(
+                ch_genome_bam.join(ch_genome_bam_index, by: [0])
+            )
+            ch_versions = ch_versions.mix(DEEPTOOLS_BAMCOVERAGE.out.versions)
+        }
     }
 
     //
