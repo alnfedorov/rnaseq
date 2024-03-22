@@ -28,7 +28,7 @@ process MINIMAP2_PREMAP {
 
     // filtering parameters
     def filtering_args = task.ext.filtering_args
-    def fastq_out = meta.single_end ? "-o ${prefix}.fq.gz" : "-s ${prefix}_singletons.fq.gz -0 ${prefix}_broken.fq.gz -1 ${prefix}_1.fq.gz -2 ${prefix}_2.fq.gz"
+    def fastq_out = meta.single_end ? "-0 ${prefix}.fq.gz" : "-s ${prefix}_singletons.fq.gz -0 ${prefix}_broken.fq.gz -1 ${prefix}_1.fq.gz -2 ${prefix}_2.fq.gz"
     """
     # Map to the library -> select potentially unmapped reads -> collate -> turn into correct fastq files
     minimap2 ${premp_args} -t $task.cpus ${reference} ${fastq_in} | \\
