@@ -10,6 +10,11 @@
                         "git_sha": "de3e6fc949dcffb8d3508c015f435ace5773ff08",
                         "installed_by": ["modules"]
                     },
+                    "bwamem2/index": {
+                        "branch": "master",
+                        "git_sha": "7081e04c18de9480948d34513a1c1e2d0fa9126d",
+                        "installed_by": ["modules"]
+                    },
                     "cat/fastq": {
                         "branch": "master",
                         "git_sha": "5c460c5a4736974abde2843294f35307ee2b0e5e",
@@ -80,7 +85,7 @@
                     },
                     "minimap2/index": {
                         "branch": "master",
-                        "git_sha": "3f5420aa22e00bd030a2556dfdffc9e164ec0ec5",
+                        "git_sha": "72e277acfd9e61a9f1368eafb4a9e83f5bcaa9f5",
                         "installed_by": ["modules"]
                     },
                     "picard/markduplicates": {

@@ -1,7 +1,7 @@
-name: minimap2_index
+name: bwamem2_index
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - bioconda::minimap2=2.28
+  - bioconda::bwa-mem2=2.2.1

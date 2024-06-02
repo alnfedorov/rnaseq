@@ -40,11 +40,25 @@ if (params.premap_fasta) {
 }
 
 // Check alignment parameters
-def prepareToolIndices  = []
+def prepareToolIndices = []
 if (!params.skip_bbsplit) { prepareToolIndices << 'bbsplit' }
-if (params.premap_fasta) { prepareToolIndices << 'minimap2' }
 if (!params.skip_alignment) { prepareToolIndices << params.aligner }
 if (!params.skip_pseudo_alignment && params.pseudo_aligner) { prepareToolIndices << params.pseudo_aligner }
+if (params.premap_fasta) { prepareToolIndices << params.premap_tool }
+
+premap_minimap2_index = null
+premap_bwamem2_index = null
+if (params.premap_fasta) {
+    if (params.premap_index) {
+        if (params.premap_tool == "minimap2") {
+            premap_minimap2_index = params.premap_index
+        } else if (params.premap_tool == "bwa-mem2") {
+            premap_bwamem2_index = params.premap_index
+        } else {
+            log.error 'ERROR: Unknown pre-mapping tool.'
+        }
+    }
+}
 
 // Determine whether to filter the GTF or not
 def filterGtf = 
@@ -116,6 +130,7 @@ include { DESEQ2_QC as DESEQ2_QC_STAR_SALMON } from '../modules/local/deseq2_qc'
 include { DESEQ2_QC as DESEQ2_QC_RSEM        } from '../modules/local/deseq2_qc'
 include { DESEQ2_QC as DESEQ2_QC_PSEUDO      } from '../modules/local/deseq2_qc'
 include { MINIMAP2_PREMAP                    } from '../modules/local/minimap2_premap'
+include { BWAMEM2_PREMAP                     } from '../modules/local/bwamem2_premap'
 include { DUPRADAR                           } from '../modules/local/dupradar'
 include { MULTIQC                            } from '../modules/local/multiqc'
 include { MULTIQC_CUSTOM_BIOTYPE             } from '../modules/local/multiqc_custom_biotype'
@@ -201,7 +216,8 @@ workflow RNASEQ {
         params.kallisto_index,
         params.hisat2_index,
         params.bbsplit_index,
-        params.premap_index,
+        premap_minimap2_index,
+        premap_bwamem2_index,
         params.gencode,
         is_aws_igenome,
         biotype,
@@ -358,6 +374,34 @@ workflow RNASEQ {
         ch_sortmerna_multiqc = SORTMERNA.out.log
         ch_versions = ch_versions.mix(SORTMERNA.out.versions.first())
     }
+
+    // 
+    // MODULE: Premap reads to supplied libraries
+    //
+    ch_premap_multiqc = Channel.empty()
+    if (params.premap_fasta) {
+        if (params.premap_tool == "minimap2") {
+            MINIMAP2_PREMAP(
+                ch_filtered_reads, 
+                PREPARE_GENOME.out.premap_minimap2_index
+            )
+            .unmapped_reads
+            .set { ch_filtered_reads }
+
+            ch_versions = ch_versions.mix(MINIMAP2_PREMAP.out.versions.first())
+        } else if (params.premap_tool == "bwa-mem2") {
+            BWAMEM2_PREMAP(
+                ch_filtered_reads, 
+                PREPARE_GENOME.out.premap_bwamem2_index
+            )
+            .unmapped_reads
+            .set { ch_filtered_reads }
+
+            ch_versions = ch_versions.mix(BWAMEM2_PREMAP.out.versions.first())
+        } else {
+            log.error 'ERROR: Unknown pre-mapping tool.'
+        }
+    }
     
     //
     // SUBWORKFLOW: Sub-sample FastQ files and pseudoalign with Salmon to auto-infer strandedness
@@ -402,21 +446,6 @@ workflow RNASEQ {
         }
         .mix(ch_strand_fastq.known_strand)
         .set { ch_strand_inferred_filtered_fastq }
-
-    // 
-    // MODULE: Premap reads to supplied libraries
-    //
-    ch_premap_multiqc = Channel.empty()
-    if (params.premap_fasta) {
-        MINIMAP2_PREMAP(
-            ch_filtered_reads, 
-            PREPARE_GENOME.out.minimap2_index
-        )
-        .unmapped_reads
-        .set { ch_filtered_reads }
-
-        ch_versions = ch_versions.mix(MINIMAP2_PREMAP.out.versions.first())
-    }
 
     //
     // SUBWORKFLOW: Alignment with STAR and gene/transcript quantification with Salmon

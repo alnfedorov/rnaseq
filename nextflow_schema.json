@@ -267,6 +267,13 @@
                     "description": "Path to directory or tar.gz archive for pre-built BBSplit index.",
                     "help_text": "The BBSplit index will have to be built at least once with this pipeline (see `--save_reference` to save index). It can then be provided via `--bbsplit_index` for future runs."
                 },
+                "premap_tool" : {
+                    "type": "string",
+                    "default": "bwa-mem2",
+                    "fa_icon": "fas fa-chart-area",
+                    "description": "Specify the tool to use for reads pre-mapping file creation.",
+                    "enum": ["minimap2", "bwa-mem2"]
+                },
                 "premap_fasta": {
                     "type": "string",
                     "format": "file-path",
@@ -282,8 +289,8 @@
                     "format": "path",
                     "exists": true,
                     "fa_icon": "fas fa-bezier-curve",
-                    "description": "Path to the file with pre-built pre-mapping minimap2 index.",
-                    "help_text": "The minimap2 index will have to be built at least once with this pipeline (see `--save_reference` to save index). It can then be provided via `--premap_index` for future runs."
+                    "description": "Path to the file/directory with pre-built pre-mapping index.",
+                    "help_text": "The index will have to be built at least once with this pipeline (see `--save_reference` to save index). It can then be provided via `--premap_index` for future runs."
                 },
                 "remove_ribo_rna": {
                     "type": "boolean",
