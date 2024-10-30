@@ -175,9 +175,10 @@ workflow RNASEQ {
     // SUBWORKFLOW: Premap reads with STAR and filter out reads overlapping the "exclude" BED file
     //
     if (params.premap_star_index && params.premap_exclude_bed) {
+        ch_premap_star_index = Channel.value(file(params.premap_star_index))
         PREMAP_STAR (
             ch_strand_inferred_filtered_fastq,
-            ch_star_index.map { [ [:], it ] },
+            ch_premap_star_index.map { [ [:], it ] },
             ch_gtf.map { [ [:], it ] },
             params.star_ignore_sjdbgtf,
             '',
