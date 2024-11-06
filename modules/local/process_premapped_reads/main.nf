@@ -13,8 +13,8 @@ process PROCESS_PREMAPPED_READS {
 
     output:
     tuple val(meta), path('*.pre-mapped.fq.gz')                         , emit: premapped_correct_reads
-    tuple val(meta), path('*_pre-mapped.singletons.fq.gz')              , emit: premapped_signleton_reads
-    tuple val(meta), path('*_pre-mapped.broken.fq.gz')                  , emit: premapped_broken_reads
+    tuple val(meta), path('*_pre-mapped.singletons.fq.gz')              , emit: premapped_signleton_reads, optional: true
+    tuple val(meta), path('*_pre-mapped.broken.fq.gz')                  , emit: premapped_broken_reads   , optional: true
     tuple val(meta), path('*.excluded.bam'), path('*.excluded.bam.bai') , emit: excluded_bam
     path  "versions.yml"                                                , emit: versions
 
@@ -28,14 +28,12 @@ process PROCESS_PREMAPPED_READS {
     meta.single_end ? [reads].flatten().each{reads1 << it} : reads.eachWithIndex{ v, ix -> ( ix & 1 ? reads2 : reads1) << v }
 
     // filtering parameters
-    def fastq_out_primary = "", fastq_out_excluded = "", concatenate_cmd = ""
+    def fastq_out_primary = "", concatenate_cmd = ""
     if (meta.single_end) {
         fastq_out_primary = "-0 ${prefix}.pre-mapped.fq.gz"
-        fastq_out_excluded = "-0 ${prefix}.excluded.fq.gz"
         concatenate_cmd = "cat ${reads1.join(" ")} >> ${prefix}.pre-mapped.fq.gz"
     } else {
         fastq_out_primary = "-s ${prefix}_pre-mapped.singletons.fq.gz -0 ${prefix}_pre-mapped.broken.fq.gz -1 ${prefix}_1.pre-mapped.fq.gz -2 ${prefix}_2.pre-mapped.fq.gz"
-        fastq_out_excluded = "-s ${prefix}_excluded.singletons.fq.gz -0 ${prefix}_excluded.broken.fq.gz -1 ${prefix}_1.excluded.fq.gz -2 ${prefix}_2.excluded.fq.gz"
         concatenate_cmd = "cat ${reads1.join(" ")} >> ${prefix}_1.pre-mapped.fq.gz && cat ${reads2.join(" ")} >> ${prefix}_2.pre-mapped.fq.gz"
     }
     """
