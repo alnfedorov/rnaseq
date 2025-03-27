@@ -31,16 +31,16 @@ def calculateStrandedness(forwardFragments, reverseFragments, unstrandedFragment
         def proportionDifference = Math.abs(forwardProportion - reverseProportion)
 
         if (forwardProportion >= stranded_threshold) {
-            library_strandedness = 'forward'
+            strandedness = 'forward'
         } else if (reverseProportion >= stranded_threshold) {
-            library_strandedness = 'reverse'
+            strandedness = 'reverse'
         } else if (proportionDifference <= unstranded_threshold) {
-            library_strandedness = 'unstranded'
+            strandedness = 'unstranded'
         }
     }
 
     return [
-        inferred_strandedness: library_strandedness,
+        inferred_strandedness: strandedness,
         forwardFragments: (forwardFragments / (totalFragments as double)) * 100,
         reverseFragments: (reverseFragments / (totalFragments as double)) * 100,
         unstrandedFragments: (unstrandedFragments / (totalFragments as double)) * 100
