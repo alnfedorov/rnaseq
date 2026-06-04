@@ -79,7 +79,14 @@ def getWorkflowVersion() {
 //
 def processVersionsFromYAML(yaml_file) {
     def yaml = new org.yaml.snakeyaml.Yaml()
-    def versions = yaml.load(yaml_file).collectEntries { k, v -> [k.tokenize(':')[-1], v] }
+    def loaded = yaml.load(yaml_file.text)
+
+    if (!loaded) {
+        log.warn "Skipping empty software versions file: ${yaml_file}"
+        return ''
+    }
+
+    def versions = loaded.collectEntries { k, v -> [k.tokenize(':')[-1], v] }
     return yaml.dumpAsMap(versions).trim()
 }
 

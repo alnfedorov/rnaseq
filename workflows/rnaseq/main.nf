@@ -114,7 +114,6 @@ workflow RNASEQ {
     ch_strand_status = channel.empty()
     ch_percent_mapped = channel.empty()
     ch_unaligned_sequences = channel.empty()
-    ch_versions = channel.empty()
 
     // Per-sample MultiQC bundle — `.join(..., remainder: true)` chains
     // fed to MULTIQC_RNASEQ. `collapseAgg` re-keys by meta.id at the end
@@ -271,12 +270,9 @@ workflow RNASEQ {
             ch_premap_star_index.map { [ [:], it ] },
             ch_gtf.map { [ [:], it ] },
             params.star_ignore_sjdbgtf,
-            '',
-            params.seq_center ?: '',
             file(params.premap_exclude_bed, checkIfExists: true)
         )
         ch_strand_inferred_filtered_fastq = PREMAP_STAR.out.premapped_fastq
-        ch_versions = ch_versions.mix(PREMAP_STAR.out.versions)
     }
 
     //
@@ -720,23 +716,26 @@ workflow RNASEQ {
         } else if (params.bigwig_tool == 'deeptools') {
             ch_bamcov_input = ch_genome_bam.join(ch_genome_bam_index, by: [0])
             ch_bamcov_input_stranded = ch_bamcov_input.filter { meta, _bam, _bai -> meta.strandedness in ['forward', 'reverse'] }
+            ch_blacklist = channel.value([ [:], [] ])
 
             DEEPTOOLS_BAMCOVERAGE_FW (
                 ch_bamcov_input_stranded,
                 ch_fasta,
-                ch_fai
+                ch_fai,
+                ch_blacklist
             )
             DEEPTOOLS_BAMCOVERAGE_REV (
                 ch_bamcov_input_stranded,
                 ch_fasta,
-                ch_fai
+                ch_fai,
+                ch_blacklist
             )
             DEEPTOOLS_BAMCOVERAGE_COMBINED (
                 ch_bamcov_input,
                 ch_fasta,
-                ch_fai
+                ch_fai,
+                ch_blacklist
             )
-            ch_versions = ch_versions.mix(DEEPTOOLS_BAMCOVERAGE_COMBINED.out.versions.first())
         }
     }
 
@@ -836,7 +835,7 @@ workflow RNASEQ {
     //
     // Collate and save software versions from the `versions` topic
     //
-    ch_collated_versions = softwareVersionsToYAML(topic_versions.versions_file.mix(ch_versions))
+    ch_collated_versions = softwareVersionsToYAML(topic_versions.versions_file)
         .mix(topic_versions_string)
         .collectFile(storeDir: "${params.outdir}/pipeline_info", name: 'nf_core_rnaseq_software_mqc_versions.yml', sort: true, newLine: true)
 

@@ -16,7 +16,7 @@ process PROCESS_PREMAPPED_READS {
     tuple val(meta), path('*_pre-mapped.singletons.fq.gz')              , emit: premapped_signleton_reads, optional: true
     tuple val(meta), path('*_pre-mapped.broken.fq.gz')                  , emit: premapped_broken_reads   , optional: true
     tuple val(meta), path('*.excluded.bam'), path('*.excluded.bam.bai') , emit: excluded_bam
-    path  "versions.yml"                                                , emit: versions
+    path  "versions.yml"                                                , emit: versions, topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -24,11 +24,13 @@ process PROCESS_PREMAPPED_READS {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
 
-    def reads1 = [], reads2 = []
+    def reads1 = []
+    def reads2 = []
     meta.single_end ? [reads].flatten().each{reads1 << it} : reads.eachWithIndex{ v, ix -> ( ix & 1 ? reads2 : reads1) << v }
 
     // filtering parameters
-    def fastq_out_primary = "", concatenate_cmd = ""
+    def fastq_out_primary = ""
+    def concatenate_cmd = ""
     if (meta.single_end) {
         fastq_out_primary = "-0 ${prefix}.pre-mapped.fq.gz"
         concatenate_cmd = "cat ${reads1.join(" ")} >> ${prefix}.pre-mapped.fq.gz"
